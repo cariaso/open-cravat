@@ -595,7 +595,9 @@ class Cravat(object):
                 if not self.args.silent:
                     print("Running annotators...")
                 stime = time.time()
+                self.logger.info("@loc2001")
                 self.run_annotators_mp()
+                self.logger.info("@loc2002")
                 rtime = time.time() - stime
                 if not self.args.silent:
                     print("\tannotator(s) finished in {0:.3f}s".format(rtime))
@@ -634,15 +636,20 @@ class Cravat(object):
                     print("Running reporter...")
                 no_problem_in_run, report_response = await self.run_reporter()
             self.update_status("Finished", force=True)
+            self.logger.info("@loc2003")
         except Exception as e:
+            self.logger.info("@loc2004")
             self.handle_exception(e)
             no_problem_in_run = False
+            self.logger.info("@loc2005")
         finally:
+            self.logger.info("@loc2006")
             end_time = time.time()
             display_time = time.asctime(time.localtime(end_time))
             runtime = end_time - self.start_time
             self.metricObj.set_job_data('jobRuntime',round(runtime,3))
             success = "Finished Normally"
+            self.logger.info("@loc2007")
             if no_problem_in_run:
                 self.logger.info("finished: {0}".format(display_time))
                 self.logger.info("runtime: {0:0.3f}s".format(runtime))
@@ -661,6 +668,7 @@ class Cravat(object):
             self.metricObj.set_job_data('success',success)
             self.metricObj.set_job_data('sampleCount', len(self.samples))
             self.metricObj.do_job_metrics(self)
+            self.logger.info("@loc2009")
             self.close_logger()
             if self.args.do_not_change_status != True:
                 self.status_writer.flush()
@@ -1310,6 +1318,7 @@ class Cravat(object):
         genemapper.run()
 
     def run_genemapper_mp(self):
+        self.logger.info("@loc0000")
         num_workers = au.get_max_num_concurrent_annotators_per_job()
         if self.args.mp is not None:
             try:
@@ -1318,7 +1327,7 @@ class Cravat(object):
                     num_workers = self.args.mp
             except:
                 self.logger.exception("error handling mp argument:")
-        self.logger.info("num_workers: {}".format(num_workers))
+        self.logger.info("num_workers@1: {}".format(num_workers))
         reader = CravatReader(self.crvinput)
         num_lines, chunksize, poss, len_poss, max_num_lines = reader.get_chunksize(
             num_workers
@@ -1369,7 +1378,8 @@ class Cravat(object):
             for job in jobs:
                 job.get()
         pool.close()
-        pool.join()
+        self.logger.info("@loc0001")
+        # pool.join()
         # collects crx.
         crx_path = os.path.join(self.output_dir, f"{self.run_name}.crx")
         wf = open(crx_path, "w")
@@ -1460,6 +1470,7 @@ class Cravat(object):
             """
             os.remove(fn)
         wf.close()
+        self.logger.info("@loc0002")
         del unique_trs
 
     def run_aggregator(self):
@@ -1725,6 +1736,7 @@ class Cravat(object):
         Run annotators in multiple worker processes.
         """
         # Determine number of worker processes
+        self.logger.info("@loc1001")
         num_workers = au.get_max_num_concurrent_annotators_per_job()
         if self.args.mp is not None:
             try:
@@ -1733,7 +1745,7 @@ class Cravat(object):
                     num_workers = self.args.mp
             except:
                 self.logger.exception("error handling mp argument:")
-        self.logger.info("num_workers: {}".format(num_workers))
+        self.logger.info("num_workers@2: {}".format(num_workers))
         # Create arguments for each annotator
         run_args = {}
         for module in self.run_annotators.values():
@@ -1829,7 +1841,9 @@ class Cravat(object):
                         start_queue.put(run_args[mname])
                         queued_mnames.add(mname)
             queue_populated = True
+            #self.logger.info("@loc1002")
             pool.join()
+            #self.logger.info("@loc1003")
             # Retrieve finished annotators from end_queue
             while True:
                 try:
@@ -1850,6 +1864,7 @@ class Cravat(object):
         )
         self.log_handler.setFormatter(formatter)
         self.logger.addHandler(self.log_handler)
+        self.logger.info("@loc1004")
         if len(self.run_annotators) > 0:
             self.annotator_ran = True
 

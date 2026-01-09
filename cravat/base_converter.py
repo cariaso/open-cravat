@@ -40,6 +40,7 @@ class BaseConverter(object):
                     exc_handler(ln, line, e)
                     continue
                 else:
+                    self.logger.info(f"@loc5001 big fail {e}")
                     raise e
 
     def addl_operation_for_unique_variant(self, wdict, wdict_no):
