@@ -595,10 +595,10 @@ class Cravat(object):
                 if not self.args.silent:
                     print("Running annotators...")
                 stime = time.time()
-                self.logger.info("@loc2001")
                 self.run_annotators_mp()
-                self.logger.info("@loc2002")
+                self.logger.info("@loc2002 self.run_annotators_mp runscleanly")
                 rtime = time.time() - stime
+                self.logger.info("@loc2002-00000")
                 if not self.args.silent:
                     print("\tannotator(s) finished in {0:.3f}s".format(rtime))
             if (
@@ -611,11 +611,16 @@ class Cravat(object):
                     or self.startlevel == self.runlevels["aggregator"]
                 )
             ):
+                self.logger.info("@loc2002-00001")
                 if not self.args.silent:
                     print("Running aggregator...")
+                self.logger.info("@loc2002-00002")
                 self.result_path = self.run_aggregator()
+                self.logger.info("@loc2002-00003")
                 await self.write_job_info()
+                self.logger.info("@loc2002-00004")
                 self.write_smartfilters()
+                self.logger.info("@loc2002-00005")
                 self.aggregator_ran = True
             if (
                 self.endlevel >= self.runlevels["postaggregator"]
@@ -624,7 +629,9 @@ class Cravat(object):
             ):
                 if not self.args.silent:
                     print("Running postaggregators...")
+                self.logger.info("@loc2002-00006")
                 self.run_postaggregators()
+                self.logger.info("@loc2002-00007")
             if (
                 self.endlevel >= self.runlevels["reporter"]
                 and self.startlevel <= self.runlevels["reporter"]
@@ -634,8 +641,12 @@ class Cravat(object):
             ):
                 if not self.args.silent:
                     print("Running reporter...")
+                self.logger.info("@loc2002-00008")
                 no_problem_in_run, report_response = await self.run_reporter()
+                self.logger.info("@loc2002-00009")
+            self.logger.info("@loc2002-00010")
             self.update_status("Finished", force=True)
+            self.logger.info("@loc2002-9999")
             self.logger.info("@loc2003")
         except Exception as e:
             self.logger.info("@loc2004")
@@ -1318,7 +1329,7 @@ class Cravat(object):
         genemapper.run()
 
     def run_genemapper_mp(self):
-        self.logger.info("@loc0000")
+        # self.logger.info("@loc0000")
         num_workers = au.get_max_num_concurrent_annotators_per_job()
         if self.args.mp is not None:
             try:
@@ -1378,7 +1389,7 @@ class Cravat(object):
             for job in jobs:
                 job.get()
         pool.close()
-        self.logger.info("@loc0001")
+        # self.logger.info("@loc0001")
         # pool.join()
         # collects crx.
         crx_path = os.path.join(self.output_dir, f"{self.run_name}.crx")
@@ -1470,7 +1481,7 @@ class Cravat(object):
             """
             os.remove(fn)
         wf.close()
-        self.logger.info("@loc0002")
+        self.logger.info("@loc0002 run_genemapper_mp finishes clean")
         del unique_trs
 
     def run_aggregator(self):
@@ -1736,7 +1747,7 @@ class Cravat(object):
         Run annotators in multiple worker processes.
         """
         # Determine number of worker processes
-        self.logger.info("@loc1001")
+        self.logger.info("@loc1001 begin run_annotators_mp")
         num_workers = au.get_max_num_concurrent_annotators_per_job()
         if self.args.mp is not None:
             try:
@@ -1864,7 +1875,7 @@ class Cravat(object):
         )
         self.log_handler.setFormatter(formatter)
         self.logger.addHandler(self.log_handler)
-        self.logger.info("@loc1004")
+        self.logger.info("@loc1004 run_annotators_mp end")
         if len(self.run_annotators) > 0:
             self.annotator_ran = True
 
