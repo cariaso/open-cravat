@@ -1926,7 +1926,7 @@ class Cravat(object):
     async def write_job_info(self):
         self.logger.info("@loc4000-00001")
         dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
-        self.logger.info("@loc4000-00002")
+        self.logger.info(f"@loc4000-00002 {dbpath=} {aiosqlite.__version__=}")
         conn = await aiosqlite.connect(dbpath)
         self.logger.info("@loc4000-00003")
         cursor = await conn.cursor()
