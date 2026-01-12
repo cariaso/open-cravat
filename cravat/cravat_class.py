@@ -1896,9 +1896,29 @@ class Cravat(object):
             f.close()
         return title, version, modulename
 
+    async def connect_with_timeout(self, dbpath, timeout=5, retries=3, delay=0.5):
+        last_exc = None
+        for attempt in range(1, retries + 1):
+            try:
+                return await asyncio.wait_for(
+                    aiosqlite.connect(dbpath),
+                    timeout=timeout,
+                )
+            except asyncio.TimeoutError as e:
+                last_exc = e
+            except Exception as e:
+                last_exc = e
+
+            if attempt < retries:
+                await asyncio.sleep(delay)
+
+        raise TimeoutError(f"aiosqlite.connect timed out after {retries} attempts") from last_exc
+
     async def write_job_info(self):
         dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
-        conn = await aiosqlite.connect(dbpath)
+        self.logger.info(f"@loc0001 {dbpath=} {aiosqlite.__version__=}")
+        conn = await self.connect_with_timeout(dbpath, timeout=3, retries=5)
+        self.logger.info(f"@loc0002 {dbpath=} {aiosqlite.__version__=}")
         cursor = await conn.cursor()
         dt = datetime.now(timezone.utc)
         utc_time = dt.replace(tzinfo=timezone.utc)    
