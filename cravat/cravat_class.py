@@ -596,9 +596,7 @@ class Cravat(object):
                     print("Running annotators...")
                 stime = time.time()
                 self.run_annotators_mp()
-                self.logger.info("@loc2002 self.run_annotators_mp runscleanly")
                 rtime = time.time() - stime
-                self.logger.info("@loc2002-00000")
                 if not self.args.silent:
                     print("\tannotator(s) finished in {0:.3f}s".format(rtime))
             if (
@@ -611,16 +609,11 @@ class Cravat(object):
                     or self.startlevel == self.runlevels["aggregator"]
                 )
             ):
-                self.logger.info("@loc2002-00001")
                 if not self.args.silent:
                     print("Running aggregator...")
-                self.logger.info("@loc2002-00002")
                 self.result_path = self.run_aggregator()
-                self.logger.info("@loc2002-00003")
                 await self.write_job_info()
-                self.logger.info("@loc2002-00004")
                 self.write_smartfilters()
-                self.logger.info("@loc2002-00005")
                 self.aggregator_ran = True
             if (
                 self.endlevel >= self.runlevels["postaggregator"]
@@ -629,9 +622,7 @@ class Cravat(object):
             ):
                 if not self.args.silent:
                     print("Running postaggregators...")
-                self.logger.info("@loc2002-00006")
                 self.run_postaggregators()
-                self.logger.info("@loc2002-00007")
             if (
                 self.endlevel >= self.runlevels["reporter"]
                 and self.startlevel <= self.runlevels["reporter"]
@@ -641,26 +632,17 @@ class Cravat(object):
             ):
                 if not self.args.silent:
                     print("Running reporter...")
-                self.logger.info("@loc2002-00008")
                 no_problem_in_run, report_response = await self.run_reporter()
-                self.logger.info("@loc2002-00009")
-            self.logger.info("@loc2002-00010")
             self.update_status("Finished", force=True)
-            self.logger.info("@loc2002-9999")
-            self.logger.info("@loc2003")
         except Exception as e:
-            self.logger.info("@loc2004")
             self.handle_exception(e)
             no_problem_in_run = False
-            self.logger.info("@loc2005")
         finally:
-            self.logger.info("@loc2006")
             end_time = time.time()
             display_time = time.asctime(time.localtime(end_time))
             runtime = end_time - self.start_time
             self.metricObj.set_job_data('jobRuntime',round(runtime,3))
             success = "Finished Normally"
-            self.logger.info("@loc2007")
             if no_problem_in_run:
                 self.logger.info("finished: {0}".format(display_time))
                 self.logger.info("runtime: {0:0.3f}s".format(runtime))
@@ -679,7 +661,6 @@ class Cravat(object):
             self.metricObj.set_job_data('success',success)
             self.metricObj.set_job_data('sampleCount', len(self.samples))
             self.metricObj.do_job_metrics(self)
-            self.logger.info("@loc2009")
             self.close_logger()
             if self.args.do_not_change_status != True:
                 self.status_writer.flush()
@@ -705,15 +686,15 @@ class Cravat(object):
             if not self.args.silent:
                 print(s)
             return
-        async with aiosqlite.connect(constants.admindb_path) as db:
-            cursor = await db.cursor()
-            q = 'update jobs set runtime={}, numinput={} where jobid="{}"'.format(
-                runtime, numinput, self.args.jobid
-            )
-            await cursor.execute(q)
-            await db.commit()
-            await cursor.close()
-            await db.close()
+        db = await aiosqlite.connect(constants.admindb_path)
+        cursor = await db.cursor()
+        q = 'update jobs set runtime={}, numinput={} where jobid="{}"'.format(
+            runtime, numinput, self.args.jobid
+        )
+        await cursor.execute(q)
+        await db.commit()
+        await cursor.close()
+        await db.close()
 
     def write_smartfilters(self):
         ttime = time.time()
@@ -1329,7 +1310,6 @@ class Cravat(object):
         genemapper.run()
 
     def run_genemapper_mp(self):
-        # self.logger.info("@loc0000")
         num_workers = au.get_max_num_concurrent_annotators_per_job()
         if self.args.mp is not None:
             try:
@@ -1338,7 +1318,7 @@ class Cravat(object):
                     num_workers = self.args.mp
             except:
                 self.logger.exception("error handling mp argument:")
-        self.logger.info("num_workers@1: {}".format(num_workers))
+        self.logger.info("num_workers: {}".format(num_workers))
         reader = CravatReader(self.crvinput)
         num_lines, chunksize, poss, len_poss, max_num_lines = reader.get_chunksize(
             num_workers
@@ -1389,8 +1369,6 @@ class Cravat(object):
             for job in jobs:
                 job.get()
         pool.close()
-        # self.logger.info("@loc0001")
-        # pool.join()
         # collects crx.
         crx_path = os.path.join(self.output_dir, f"{self.run_name}.crx")
         wf = open(crx_path, "w")
@@ -1481,7 +1459,6 @@ class Cravat(object):
             """
             os.remove(fn)
         wf.close()
-        self.logger.info("@loc0002 run_genemapper_mp finishes clean")
         del unique_trs
 
     def run_aggregator(self):
@@ -1747,7 +1724,6 @@ class Cravat(object):
         Run annotators in multiple worker processes.
         """
         # Determine number of worker processes
-        self.logger.info("@loc1001 begin run_annotators_mp")
         num_workers = au.get_max_num_concurrent_annotators_per_job()
         if self.args.mp is not None:
             try:
@@ -1756,7 +1732,7 @@ class Cravat(object):
                     num_workers = self.args.mp
             except:
                 self.logger.exception("error handling mp argument:")
-        self.logger.info("num_workers@2: {}".format(num_workers))
+        self.logger.info("num_workers: {}".format(num_workers))
         # Create arguments for each annotator
         run_args = {}
         for module in self.run_annotators.values():
@@ -1852,9 +1828,7 @@ class Cravat(object):
                         start_queue.put(run_args[mname])
                         queued_mnames.add(mname)
             queue_populated = True
-            #self.logger.info("@loc1002")
             pool.join()
-            #self.logger.info("@loc1003")
             # Retrieve finished annotators from end_queue
             while True:
                 try:
@@ -1875,7 +1849,6 @@ class Cravat(object):
         )
         self.log_handler.setFormatter(formatter)
         self.logger.addHandler(self.log_handler)
-        self.logger.info("@loc1004 run_annotators_mp end")
         if len(self.run_annotators) > 0:
             self.annotator_ran = True
 
@@ -1924,166 +1897,141 @@ class Cravat(object):
         return title, version, modulename
 
     async def write_job_info(self):
-        self.logger.info("@loc4000-00001")
         dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
-        self.logger.info(f"@loc4000-00002 {dbpath=} {aiosqlite.__version__=}")
-        async with aiosqlite.connect(dbpath) as conn:
-            self.logger.info("@loc4000-00003")
-            cursor = await conn.cursor()
-            self.logger.info("@loc4000-00004")
-            dt = datetime.now(timezone.utc)
-            utc_time = dt.replace(tzinfo=timezone.utc)    
-            utc_dt_string = utc_time.strftime("%Y/%m/%d %H:%M:%S")
-            if not self.append_mode:
-                q = "drop table if exists info"
-                await cursor.execute(q)
-                q = "create table info (colkey text primary key, colval text)"
-                await cursor.execute(q)
-            modified = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.logger.info("@loc4000-00005")
-            self.metricObj.set_job_data('resultModifiedAt',utc_dt_string)
+        conn = await aiosqlite.connect(dbpath)
+        cursor = await conn.cursor()
+        dt = datetime.now(timezone.utc)
+        utc_time = dt.replace(tzinfo=timezone.utc)    
+        utc_dt_string = utc_time.strftime("%Y/%m/%d %H:%M:%S")
+        if not self.append_mode:
+            q = "drop table if exists info"
+            await cursor.execute(q)
+            q = "create table info (colkey text primary key, colval text)"
+            await cursor.execute(q)
+        modified = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.metricObj.set_job_data('resultModifiedAt',utc_dt_string)
+        q = (
+            'insert or replace into info values ("Result modified at", "'
+            + modified
+            + '")'
+        )
+        await cursor.execute(q)
+        if not self.append_mode:
+            created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            q = 'insert into info values ("Result created at", "' + created + '")'
+            self.metricObj.set_job_data('numInputFiles',len(self.inputs))
+            self.metricObj.set_job_data('resultCreatedAt',utc_dt_string)
+            await cursor.execute(q)
+            q = 'insert into info values ("Input file name", "{}")'.format(
+                ";".join(self.inputs)
+            )
+            await cursor.execute(q)
             q = (
-                'insert or replace into info values ("Result modified at", "'
-                + modified
+                'insert into info values ("Input genome", "'
+                + self.input_assembly
                 + '")'
             )
-            self.logger.info("@loc4000-00006")
             await cursor.execute(q)
-            self.logger.info("@loc4000-00007")
-            if not self.append_mode:
-                self.logger.info("@loc4000-00008")
-                created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                q = 'insert into info values ("Result created at", "' + created + '")'
-                self.metricObj.set_job_data('numInputFiles',len(self.inputs))
-                self.metricObj.set_job_data('resultCreatedAt',utc_dt_string)
-                self.logger.info("@loc4000-00009")
-                await cursor.execute(q)
-                self.logger.info("@loc4000-00010")
-                q = 'insert into info values ("Input file name", "{}")'.format(
-                    ";".join(self.inputs)
-                )
-                await cursor.execute(q)
-                q = (
-                    'insert into info values ("Input genome", "'
-                    + self.input_assembly
-                    + '")'
-                )
-                self.logger.info("@loc4000-00011")
-                await cursor.execute(q)
-                q = "select count(*) from variant"
-                await cursor.execute(q)
-                r = await cursor.fetchone()
-                no_input = r[0]
-                self.logger.info("@loc4000-00012")
-                self.metricObj.set_job_data('numVariants',no_input)
-                q = (
-                    'insert into info values ("Number of unique input variants", "'
-                    + str(no_input)
-                    + '")'
-                )
-                await cursor.execute(q)
-                self.logger.info("@loc4000-00013")
-                self.metricObj.set_job_data('ocVersion',self.pkg_ver)
-                q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
-                await cursor.execute(q)
-                converterFormat = await self.get_converter_format_from_crv()
-                q = 'insert into info values ("_converter_format", "{}")'.format(converterFormat)
-                await cursor.execute(q)
-                self.metricObj.set_job_data('converterFormat',converterFormat)
-                self.metricObj.set_job_converter('name',converterFormat)
-                (
-                    mapper_title,
-                    mapper_version,
-                    mapper_modulename,
-                ) = await self.get_mapper_info_from_crx()
-                self.metricObj.set_job_mapper('name',mapper_modulename)
-                self.metricObj.set_job_mapper('version',mapper_version)
-                genemapper_str = "{} ({})".format(mapper_title, mapper_version)
-                q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
-                await cursor.execute(q)
-                q = 'insert into info values ("_mapper", "{}:{}")'.format(
-                    mapper_modulename, mapper_version
-                )
-                await cursor.execute(q)
-                f = open(os.path.join(self.output_dir, self.run_name + ".crm"))
-                self.logger.info("@loc4000-00014")
-                for line in f:
-                    if line.startswith("#input_paths="):
-                        input_path_dict_str = "=".join(line.strip().split("=")[1:]).replace(
-                            '"', "'"
-                        )
-                        q = 'insert into info values ("_input_paths", "{}")'.format(
-                            input_path_dict_str
-                        )
-                        await cursor.execute(q)
-                q = f'insert into info values ("primary_transcript", "{",".join(self.args.primary_transcript)}")'
-                self.metricObj.set_job_data('primaryTranscript',"#".join(self.args.primary_transcript))
-                self.logger.info("@loc4000-00015")
-                await cursor.execute(q)
-            self.logger.info("@loc4000-00016")
-            q = 'select colval from info where colkey="annotators_desc"'
+            q = "select count(*) from variant"
             await cursor.execute(q)
             r = await cursor.fetchone()
-            if r is None:
-                annotator_desc_dict = {}
-            else:
-                annotator_desc_dict = json.loads(r[0])
-            q = "select name, displayname, version from variant_annotator"
-            await cursor.execute(q)
-            rows = list(await cursor.fetchall())
-            self.logger.info("@loc4000-00017")
-            q = "select name, displayname, version from gene_annotator"
-            await cursor.execute(q)
-            tmp_rows = list(await cursor.fetchall())
-            if tmp_rows is not None:
-                rows.extend(tmp_rows)
-            annotators_str = ""
-            annotator_version = {}
-            annotators = []
-            self.logger.info("@loc4000-00018")
-            for row in rows:
-                (name, displayname, version) = row
-                if name in ["base", "tagsampler", "hg19", "hg18"]:
-                    continue
-                if version is not None and version != "":
-                    annotators_str += "{} ({}), ".format(displayname, version)
-                    annotators.append("{}:{}".format(name, version))
-                else:
-                    annotators_str += "{}, ".format(displayname)
-                    annotators.append("{}:".format(name))
-                annotator_version[name] = version
-                module_info = au.get_local_module_info(name)
-                if module_info is not None and module_info.conf is not None:
-                    annotator_desc_dict[name] = module_info.conf["description"]
-            q = 'insert or replace into info values ("_annotator_desc", "{}")'.format(
-                json.dumps(annotator_desc_dict).replace('"', "'")
-            )
-            self.logger.info("@loc4000-00019")
-            await cursor.execute(q)
-            if self.args.do_not_change_status != True:
-                self.status_writer.queue_status_update(
-                    "annotator_version", annotator_version, force=True
-                )
+            no_input = r[0]
+            self.metricObj.set_job_data('numVariants',no_input)
             q = (
-                'insert or replace into info values ("Annotators", "'
-                + annotators_str
+                'insert into info values ("Number of unique input variants", "'
+                + str(no_input)
                 + '")'
             )
-            self.logger.info("@loc4000-00020")
             await cursor.execute(q)
-            q = 'insert or replace into info values ("_annotators", "{}")'.format(
-                ",".join(annotators)
-            )  
-            self.logger.info("@loc4000-00021")
+            self.metricObj.set_job_data('ocVersion',self.pkg_ver)
+            q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
             await cursor.execute(q)
-            self.logger.info("@loc4000-00022")
+            converterFormat = await self.get_converter_format_from_crv()
+            q = 'insert into info values ("_converter_format", "{}")'.format(converterFormat)
+            await cursor.execute(q)
+            self.metricObj.set_job_data('converterFormat',converterFormat)
+            self.metricObj.set_job_converter('name',converterFormat)
+            (
+                mapper_title,
+                mapper_version,
+                mapper_modulename,
+            ) = await self.get_mapper_info_from_crx()
+            self.metricObj.set_job_mapper('name',mapper_modulename)
+            self.metricObj.set_job_mapper('version',mapper_version)
+            genemapper_str = "{} ({})".format(mapper_title, mapper_version)
+            q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
+            await cursor.execute(q)
+            q = 'insert into info values ("_mapper", "{}:{}")'.format(
+                mapper_modulename, mapper_version
+            )
+            await cursor.execute(q)
+            f = open(os.path.join(self.output_dir, self.run_name + ".crm"))
+            for line in f:
+                if line.startswith("#input_paths="):
+                    input_path_dict_str = "=".join(line.strip().split("=")[1:]).replace(
+                        '"', "'"
+                    )
+                    q = 'insert into info values ("_input_paths", "{}")'.format(
+                        input_path_dict_str
+                    )
+                    await cursor.execute(q)
+            q = f'insert into info values ("primary_transcript", "{",".join(self.args.primary_transcript)}")'
+            self.metricObj.set_job_data('primaryTranscript',"#".join(self.args.primary_transcript))
+            await cursor.execute(q)
+        q = 'select colval from info where colkey="annotators_desc"'
+        await cursor.execute(q)
+        r = await cursor.fetchone()
+        if r is None:
+            annotator_desc_dict = {}
+        else:
+            annotator_desc_dict = json.loads(r[0])
+        q = "select name, displayname, version from variant_annotator"
+        await cursor.execute(q)
+        rows = list(await cursor.fetchall())
+        q = "select name, displayname, version from gene_annotator"
+        await cursor.execute(q)
+        tmp_rows = list(await cursor.fetchall())
+        if tmp_rows is not None:
+            rows.extend(tmp_rows)
+        annotators_str = ""
+        annotator_version = {}
+        annotators = []
+        for row in rows:
+            (name, displayname, version) = row
+            if name in ["base", "tagsampler", "hg19", "hg18"]:
+                continue
+            if version is not None and version != "":
+                annotators_str += "{} ({}), ".format(displayname, version)
+                annotators.append("{}:{}".format(name, version))
+            else:
+                annotators_str += "{}, ".format(displayname)
+                annotators.append("{}:".format(name))
+            annotator_version[name] = version
+            module_info = au.get_local_module_info(name)
+            if module_info is not None and module_info.conf is not None:
+                annotator_desc_dict[name] = module_info.conf["description"]
+        q = 'insert or replace into info values ("_annotator_desc", "{}")'.format(
+            json.dumps(annotator_desc_dict).replace('"', "'")
+        )
+        await cursor.execute(q)
+        if self.args.do_not_change_status != True:
+            self.status_writer.queue_status_update(
+                "annotator_version", annotator_version, force=True
+            )
+        q = (
+            'insert or replace into info values ("Annotators", "'
+            + annotators_str
+            + '")'
+        )
+        await cursor.execute(q)
+        q = 'insert or replace into info values ("_annotators", "{}")'.format(
+            ",".join(annotators)
+        )  
+        await cursor.execute(q)
 
-            await conn.commit()
-            self.logger.info("@loc4000-00023")
-            await cursor.close()
-            self.logger.info("@loc4000-00024")
-            await conn.close()
-            self.logger.info("@loc4000-00025")
+        await conn.commit()
+        await cursor.close()
+        await conn.close()
 
     def run_summarizers(self):
         for module in self.ordered_summarizers:
