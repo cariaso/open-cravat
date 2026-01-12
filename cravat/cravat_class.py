@@ -1916,9 +1916,14 @@ class Cravat(object):
 
     async def write_job_info(self):
         dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
-        self.logger.info(f"@loc0001 {dbpath=} {aiosqlite.__version__=}")
-        conn = await self.connect_with_timeout(dbpath, timeout=3, retries=5)
-        self.logger.info(f"@loc0002 {dbpath=} {aiosqlite.__version__=}")
+        try:
+            self.logger.info(f"@loc0001 {dbpath=} {aiosqlite.__version__=}")
+            conn = await self.connect_with_timeout(dbpath, timeout=3, retries=5)
+            self.logger.info(f"@loc0002 {dbpath=} {aiosqlite.__version__=}")
+        except TimeoutError as e:
+            self.logger.warning(f"@loc0003 {e} unable to write_job_info")
+            return
+        self.logger.info(f"@loc0004 {dbpath=} {aiosqlite.__version__=}")
         cursor = await conn.cursor()
         dt = datetime.now(timezone.utc)
         utc_time = dt.replace(tzinfo=timezone.utc)    
