@@ -521,9 +521,11 @@ class BaseAnnotator(object):
         for db_dir in db_dirs:
             db_path = os.path.join(db_dir, self.module_name + ".sqlite")
             if os.path.exists(db_path):
-                connect_uri = f"file:{db_path}?immutable=1"
-                self.logger.info(f"opening sqlite via {connect_uri=}")
-                self.dbconn = sqlite3.connect(connect_uri, uri=True)
+                # this works, the question is does it help, benchmarking now
+                # connect_uri = f"file:{db_path}?immutable=1"
+                # self.logger.info(f"opening sqlite via {connect_uri=}")
+                # self.dbconn = sqlite3.connect(connect_uri, uri=True)
+                self.dbconn = sqlite3.connect(db_path)
                 self.cursor = self.dbconn.cursor()
 
     def close_db_connection(self):

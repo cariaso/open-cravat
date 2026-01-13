@@ -7,6 +7,11 @@ from cravat import admin_util as au
 from cravat import util
 from cravat.config_loader import ConfigLoader
 from cravat.util import write_log_msg
+# aiosqlite was here, but for some datasets it would reproducibly get stuck
+# during aiosqlite.connect()
+# after MANY attempted solutions, swapping out aiosqlite with sqlite3 worked
+# I suspect a aiosqlite only solution would also work
+# but both together is prone to a wierd conflict
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from cravat import constants
